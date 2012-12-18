@@ -11,6 +11,7 @@ segbreak="-------SEGMENT-BREAK-------"
 
 currento=None
 
+SAVESEG=15
 
 PATH="/DataVolume/shares/Public/avs/"
 class trans:
@@ -28,14 +29,15 @@ class trans:
 		self.readseg=segoff
 		self.stop=0
 		self.wstop=0
+		self.startseg=segoff
 	def finishseg(self):
 		self.fts.close()
 		clock.acquire()
 		self.execseg=self.segcount
 		clock.release()
-		if self.segcount>=15:
+		if self.segcount>=2*SAVESEG:
 			try:
-				os.unlink(PATH+"segment_%d.ts" % (self.segcount-15))
+				os.unlink(PATH+"segment_%d.ts" % (self.segcount-2*SAVESEG))
 			except:
 				pass
 		while 1:
@@ -45,7 +47,7 @@ class trans:
 			clock.release()
 			if self.wstop==1:
 				return
-			if self.segcount>myseg+10:
+			if self.segcount>myseg+SAVESEG:
 				time.sleep(1)
 			else:
 				break
@@ -143,14 +145,22 @@ class Handler:
 		if data[0]=='S':
 			fn=data[1:]
 			ret=str(info(fn))
+			same=0
 			if currento is not None:
 				clock.acquire()
-				currento.stop=1
+				wstop=currento.stop
 				clock.release()
-			currento=trans(fn,0)
-			t=threading.Thread(target = currento.start,args=())
-			t.setDaemon(1)
-			t.start()
+				if currento.filename!=fn or wstop==1:
+					clock.acquire()
+					currento.stop=1
+					clock.release()
+				else:
+					same=1
+			if same==0:
+				currento=trans(fn,0)
+				t=threading.Thread(target = currento.start,args=())
+				t.setDaemon(1)
+				t.start()
 		elif data[0]=='G':
 			seg=int(data[1:])
 			if currento is None:
@@ -158,12 +168,13 @@ class Handler:
 			clock.acquire()
 			ex=currento.execseg
 			clock.release()
-			if seg>=ex-15 and seg<=ex:
+			print '\n',seg,ex,'\n'
+			if seg>ex-2*SAVESEG and seg<=ex and seg>=currento.startseg:
 				ret=PATH+"segmeng_%d.ts"%seg
 				clock.acquire()
 				currento.readseg=seg
 				clock.release()
-			elif seg>ex and seg<ex+10:
+			elif seg>ex and seg<ex+SAVESEG:
 				while 1:
 					time.sleep(1)
 					clock.acquire()
