@@ -1,0 +1,6 @@
+Options +Indexes
+RewriteEngine on
+RewriteBase /
+RewriteRule ^(.*\.mkv)$ /cgi-bin/mplay.cgi?$1 [R]
+
+
