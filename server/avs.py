@@ -15,15 +15,28 @@ SAVESEG=15
 
 PATH="/DataVolume/shares/Public/avs/"
 class trans:
-	def __init__(self,fname,segoff):
+	def __init__(self,fname,segoff,smap=None,copy=0):
 		#self.cmd="""/opt/avs/bin/avconv --segment-length 4 --segment-offset %d -threads 4 -ss %d.0 -i "%s" -map 0:0,0:0 -map 0:1,0:1 -vf "crop=1280:720:0:0, scale=1280:720,copy" -aspect 1280:720 -y -f mpegts -async -1 -vcodec libx264 -vcodec copy -bsf:v h264_mp4toannexb -acodec libmp3lame -ab 256k -ar 48000 -ac 2 -""" % (segoff,segoff*4,fname)
 		self.filename=fname
-		if segoff==0:
-			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '0.0', '-i', fname, '-map', '0:0,0:0','-map', '0:1,0:1', '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb', '-acodec', 'libmp3lame', '-ab', '256k', '-ar', '48000', '-ac', '2', '-']
-		elif segoff<6:
-			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '0.0', '-i', fname, '-ss', '%d.0'%(segoff*4), '-map', '0:0,0:0','-map', '0:1,0:1', '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb', '-acodec', 'libmp3lame', '-ab', '256k', '-ar', '48000', '-ac', '2', '-']
+		self.smap=smap
+		self.copy=copy
+		if smap is not None:
+			mvd='0:%d,0:0' % smap[0]
+			mad='0:%d,0:1' % smap[1]
 		else:
-			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '%d.0'%(segoff*4-24), '-i', fname, '-ss', '24.0', '-map', '0:0,0:0','-map', '0:1,0:1', '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb', '-acodec', 'libmp3lame', '-ab', '256k', '-ar', '48000', '-ac', '2', '-']
+			mvd='0:0,0:0'
+			mad='0:1,0:1'
+		if segoff==0:
+			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '0.0', '-i', fname, '-map', mvd,'-map', mad, '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb']
+		elif segoff<6:
+			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '0.0', '-i', fname, '-ss', '%d.0'%(segoff*4), '-map', mvd,'-map', mad, '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb']
+		else:
+			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '%d.0'%(segoff*4-24), '-i', fname, '-ss', '24.0', '-map', mvd,'-map', mad, '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb']
+		if copy==0:
+			self.cmd=self.cmd+['-acodec', 'libmp3lame', '-ab', '256k', '-ar', '48000', '-ac', '2', '-']
+		else:
+			self.cmd=self.cmd+['-acodec', 'copy', '-']
+		#print self.cmd
 		self.segoff=segoff
 		self.execseg=-1
 		self.readseg=segoff
@@ -123,7 +136,7 @@ def info(fn):
 			if fields[2]=='Video:':
 				video=fields[1]
 			elif fields[2]=='Audio:':
-				audio.append(fields[1])
+				audio.append(line)
 	return length,video,audio
 
 class Handler:
@@ -145,22 +158,48 @@ class Handler:
 		request.shutdown(socket.SHUT_RDWR)
 	def parse(self,data):
 		global currento
-		if data[0]=='S':
+		#print data
+		if data[0]=='I':
 			fn=data[1:]
 			ret=str(info(fn))
+		elif data[0]=='S':
+			fn=data[1:]
+			arg=''
+			if fn[-4:-2]=='.q':
+				arg=fn[-2:]
+				fn=fn[:-4]
+			ret=str(info(fn))
+			try:
+				video=ret[1].split('.')[1]
+				pos=video.find('(')
+				if pos>=0:
+					video=video[:pos].strip()
+				video=int(video)
+			except:
+				video=0
+			if arg=='':
+				smap=None
+				copy=0
+			else:
+				if arg[0]=='c':
+					copy=1
+				else:
+					copy=0
+				audio=int(arg[1])
+				smap=[video,audio]
 			same=0
 			if currento is not None:
 				clock.acquire()
 				wstop=currento.stop
 				clock.release()
-				if currento.filename!=fn or wstop==1:
+				if currento.filename!=fn or wstop==1 or currento.smap!=smap or currento.copy!=copy:
 					clock.acquire()
 					currento.stop=1
 					clock.release()
 				else:
 					same=1
 			if same==0:
-				currento=trans(fn,0)
+				currento=trans(fn,0,smap,copy)
 				t=threading.Thread(target = currento.start,args=())
 				t.setDaemon(1)
 				t.start()
@@ -171,7 +210,6 @@ class Handler:
 			clock.acquire()
 			ex=currento.execseg
 			clock.release()
-			print '\n',seg,ex,'\n'
 			if seg>ex-2*SAVESEG and seg<=ex and seg>=currento.startseg:
 				ret=PATH+"segmeng_%d.ts"%seg
 				clock.acquire()
@@ -189,10 +227,12 @@ class Handler:
 						break
 			else:
 				fn=currento.filename
+				smap=currento.smap
+				copy=currento.copy
 				clock.acquire()
 				currento.stop=1
 				clock.release()
-				currento=trans(fn,seg)
+				currento=trans(fn,seg,smap,copy)
 				t=threading.Thread(target = currento.start,args=())
 				t.setDaemon(1)
 				t.start()
