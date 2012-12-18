@@ -65,6 +65,9 @@ class trans:
 				if len(lret)>0:
 					self.fts.write(lret)
 				self.fts.close()
+				clock.acquire()
+				self.execseg=self.segcount
+				clock.release()
 				break
 			if len(lret)>0:
 				nret=lret+ret
