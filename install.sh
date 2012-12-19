@@ -8,3 +8,6 @@ mkdir -p /DataVolume/shares/Public/avs/pl/
 mkdir -p /opt/avs
 /bin/cp -af mbl/* /opt/avs
 /bin/cp -f server/* /opt/avs
+chmod 755 /opt/avs/bin/*
+chmod 755 /opt/avs/*.sh
+chmod 755 /opt/avs/*.py
