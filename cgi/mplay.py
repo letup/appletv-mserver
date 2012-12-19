@@ -42,6 +42,8 @@ if arg=='qa':
 			if pos>=0:
 				lang=sid[pos:]
 				sid=sid[:pos]
+			else:
+				if sid[-1]==":":sid=sid[:-1]
 			sinfo=lang+info[1].strip()
 			audios.append([sid,sinfo])
 	except:
