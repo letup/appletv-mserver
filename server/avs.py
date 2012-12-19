@@ -34,6 +34,8 @@ class trans:
 			self.cmd=['/opt/avs/bin/avconv','--segment-length','4','--segment-offset','%d'%segoff, '-threads', '4', '-ss', '%d.0'%(segoff*4-24), '-i', fname, '-ss', '24.0', '-map', mvd,'-map', mad, '-y', '-f', 'mpegts', '-async', '-1', '-vcodec', 'copy', '-bsf:v', 'h264_mp4toannexb']
 		if copy==0:
 			self.cmd=self.cmd+['-acodec', 'libmp3lame', '-ab', '256k', '-ar', '48000', '-ac', '2', '-']
+		elif copy==2:
+			self.cmd=self.cmd+['-acodec', 'ac3', '-ab', '448k', '-ar', '48000', '-ac', '6', '-']
 		else:
 			self.cmd=self.cmd+['-acodec', 'copy', '-']
 		#print self.cmd
@@ -168,7 +170,8 @@ class Handler:
 			if fn[-4:-2]=='.q':
 				arg=fn[-2:]
 				fn=fn[:-4]
-			ret=str(info(fn))
+			vinfo=info(fn)
+			ret=str(vinfo)
 			try:
 				video=ret[1].split('.')[1]
 				pos=video.find('(')
@@ -183,6 +186,22 @@ class Handler:
 			else:
 				if arg[0]=='c':
 					copy=1
+					try:
+						for audline in vinfo[2]:
+							ainfo=audline.split("Audio:")
+							sid=ainfo[0].split()[1].split('.')[1]
+							pos=sid.find("(")
+							if pos>=0:
+								sid=sid[:pos]
+							else:
+								if sid[-1]==":":sid=sid[:-1]
+							sinfo=ainfo[1].strip()
+							if arg[1]==sid:
+								break
+						if sinfo.find("DTS")>=0 or sinfo.find("dca")>=0:
+							copy=2
+					except:
+						pass
 				else:
 					copy=0
 				audio=int(arg[1])
