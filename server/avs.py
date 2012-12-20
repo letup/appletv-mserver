@@ -188,6 +188,24 @@ class Handler:
 		if data[0]=='I':
 			fn=data[1:]
 			ret=str(info(fn))
+		elif data[0]=='T':
+			fn=data[1:]
+			ret=list(info(fn))
+			srt=fn[:-3]+'shooter.srt'
+			try:
+				st=os.stat(srt)
+			except:
+				st=None
+			if st is None:
+				cmd="""/opt/avs/shooter.py "%s" 2>&1"""  % fn
+				os.system(cmd)
+			try:
+				st=os.stat(srt)
+			except:
+				st=None
+			if st:
+				ret.append('shooter.srt')
+			ret=str(ret)
 		elif data[0]=='S':
 			fn=data[1:]
 			arg=''

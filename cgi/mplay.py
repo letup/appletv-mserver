@@ -21,8 +21,11 @@ filename="/DataVolume/shares/"+urllib.unquote(filename)
 
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.connect(('127.0.0.1',7890))
-if arg=='qa':
-	s.send("I%s\n"%filename)
+if arg=='qa' or arg=='qs':
+	if arg=='qa':
+		s.send("I%s\n"%filename)
+	else:
+		s.send("T%s\n"%filename)
 	d=s.recv(1024)
 	x=list(eval(d))
 	length=x[0].strip()
@@ -49,6 +52,9 @@ if arg=='qa':
 	except:
 		audios=[]
 	ret.append(audios)
+	if len(x)>3:
+		srt=x[3]
+		ret.append(srt)
 	print "Content-type: text/html\r\n\r\n",
 	print str(ret)
 else:
