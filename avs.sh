@@ -23,10 +23,20 @@ do_start()
 
 do_stop()
 {
+  PID=`cat $PIDFILE`
   echo -n "Stoping $NAME..."
   start-stop-daemon --chdir $WORK_PATH \
   --pidfile $PIDFILE \
   --stop --exec $DAEMON
+  while /bin/true; do
+    psline=`ps -fp $PID|grep avs`
+    if [ -z "$psline" ]; then
+      break
+    else
+      sleep 1
+      echo -n "."
+    fi
+  done
   echo "done"
 }
 

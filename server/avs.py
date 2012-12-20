@@ -3,15 +3,34 @@
 import os,socket
 from SocketServer import ThreadingTCPServer
 ThreadingTCPServer.allow_reuse_address=True
+ThreadingTCPServer.daemon_threads=True
 import threading
 import time
 import subprocess
+import sys,signal
 clock=threading.Lock()
 segbreak="-------SEGMENT-BREAK-------"
 
 currento=None
 
 SAVESEG=15
+
+def mysig(sig,frame):
+	global currento
+	if currento is not None:
+		clock.acquire()
+		currento.stop=1
+		clock.release()
+	isstop=0
+	while 1:
+		clock.acquire()
+		isstop=currento.isstop
+		clock.release()
+		if isstop==1:
+			break
+        sys.exit(1)
+
+orisig=signal.signal(signal.SIGTERM,mysig)
 
 PATH="/DataVolume/shares/Public/avs/"
 class trans:
@@ -45,6 +64,7 @@ class trans:
 		self.stop=0
 		self.wstop=0
 		self.startseg=segoff
+		self.isstop=0
 	def finishseg(self):
 		self.fts.close()
 		clock.acquire()
@@ -82,6 +102,7 @@ class trans:
 				self.fts.close()
 				clock.acquire()
 				self.execseg=self.segcount
+				self.isstop=1
 				clock.release()
 				break
 			if len(lret)>0:
@@ -95,6 +116,9 @@ class trans:
 						self.finishseg()
 						if self.wstop==1:
 							os.kill(f.pid,15)
+							clock.acquire()
+							self.isstop=1
+							clock.release()
 							return
 						nret=nret[pos+len(segbreak):]
 					else:
@@ -220,7 +244,7 @@ class Handler:
 			if same==0:
 				currento=trans(fn,0,smap,copy)
 				t=threading.Thread(target = currento.start,args=())
-				t.setDaemon(1)
+				t.setDaemon(0)
 				t.start()
 		elif data[0]=='G':
 			seg=int(data[1:])
@@ -253,7 +277,7 @@ class Handler:
 				clock.release()
 				currento=trans(fn,seg,smap,copy)
 				t=threading.Thread(target = currento.start,args=())
-				t.setDaemon(1)
+				t.setDaemon(0)
 				t.start()
 				while 1:
 					time.sleep(1)
@@ -266,6 +290,8 @@ class Handler:
 		else:
 			ret='ERROR'
 		return ret
+
+
 
 
 server=ThreadingTCPServer(('0.0.0.0',7890),Handler)
