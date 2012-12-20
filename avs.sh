@@ -13,7 +13,7 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WORK_PATH/lib
 do_start()
 {
   echo -n "Starting $NAME..."
-  start-stop-daemon --chdir $WORK_PATH \
+  LD_LIBRARY_PATH=$WORK_PATH/lib start-stop-daemon --chdir $WORK_PATH \
   --make-pidfile --pidfile $PIDFILE \
   --background \
   --start \
