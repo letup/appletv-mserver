@@ -29,6 +29,9 @@ do_stop()
   --pidfile $PIDFILE \
   --stop --exec $DAEMON
   while /bin/true; do
+    if [ -z "$PID" ]; then
+      break
+    fi 
     psline=`ps -fp $PID|grep avs`
     if [ -z "$psline" ]; then
       break
