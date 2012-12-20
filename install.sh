@@ -11,3 +11,7 @@ mkdir -p /opt/avs
 chmod 755 /opt/avs/bin/*
 chmod 755 /opt/avs/*.sh
 chmod 755 /opt/avs/*.py
+/bin/cp -f avs.sh /opt/avs/
+chmod +x /opt/avs/avs.sh
+ln -s /opt/avs/avs.sh /opt/etc/init.d/Savs.sh
+ln -s /opt/avs/avs.sh /opt/etc/init.d/Kavs.sh
