@@ -3,7 +3,7 @@
 chown www-data.www-data /usr/lib/cgi-bin/*
 chmod +x /usr/lib/cgi-bin/*
 mkdir -p /DataVolume/.avs/pl/
-chown -R 755 /DataVolume/.avs/
+chmod -R 755 /DataVolume/.avs/
 mkdir -p /opt/avs
 /bin/cp -af mbl/bin /opt/avs
 /bin/cp -af mbl/lib /opt/avs
