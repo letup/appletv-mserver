@@ -2,7 +2,7 @@
 import os
 import socket,urllib
 try:
-	server=os.environ["SERVER_NAME"]
+	server=os.environ['HTTP_HOST']
 except:
 	server="192.168.91.4"
 try:
@@ -74,7 +74,7 @@ else:
 	alll=int(hour)*3600+int(min)*60+float(sec)
 	alll=int(alll)
 	s.close()
-	url='http://%s/shares/Public/avs/pl/%s.m3u8'% (server,alll)
+	url='http://%s/avs/pl/%s.m3u8'% (server,alll)
 	print "Status: 302 Moved"
 	print "Location: %s" % url
 	print "URI: %s" % url

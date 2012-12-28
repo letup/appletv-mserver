@@ -44,7 +44,7 @@ do_stop()
 }
 
 #rm -f /tmp/mplay
-/bin/rm -f /DataVolume/shares/Public/avs/*.ts
+/bin/rm -f /DataVolume/.avs/*.ts
 test -x $DAEMON || exit 0
 
 case "$1" in

@@ -1,0 +1,46 @@
+Listen 8000
+<VirtualHost *:8000>
+	ServerAdmin webmaster@localhost
+	DocumentRoot /DataVolume/shares/
+	<Directory />
+		Options FollowSymLinks
+		AllowOverride None
+	</Directory>
+
+	<Directory /DataVolume/shares/>
+		Options Indexes FollowSymLinks MultiViews
+		AllowOverride None
+		Order allow,deny
+		Allow from all
+		RewriteEngine on
+		RewriteBase /
+		RewriteRule ^(.*\.mkv)$ /cgi-bin/mplay.cgi?$1 [R,NC]
+		RewriteRule ^(.*\.mkv).(q.)$ /cgi-bin/mplay.cgi?$1&$2 [R,NC]
+	</Directory>
+	Alias /avs/ "/DataVolume/.avs/"
+	<Directory /DataVolume/.avs/>
+		Options Indexes FollowSymLinks MultiViews
+		AllowOverride None
+		Order allow,deny
+		Allow from all
+	</Directory>
+	<Directory /DataVolume/.avs/pl/>
+		RewriteEngine on
+		RewriteBase /
+		RewriteRule ^(.*)\.m3u8$ /cgi-bin/m3u8.cgi?$1 [L]
+		RewriteRule ^segment_(.*)\.ts$ /cgi-bin/ts.cgi?$1 [L]
+	</Directory>
+	
+	ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+	<Directory "/usr/lib/cgi-bin">
+		AllowOverride None
+		Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+		Order allow,deny
+		Allow from all
+	</Directory>
+
+	ErrorLog /var/log/apache2/avs-error.log
+	LogLevel warn
+
+</VirtualHost>
+

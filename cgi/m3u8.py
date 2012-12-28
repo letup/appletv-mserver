@@ -2,7 +2,7 @@
 import os
 import socket,urllib
 try:
-	server=os.environ["SERVER_NAME"]
+	server=os.environ['HTTP_HOST']
 except:
 	server="192.168.91.4"
 try:

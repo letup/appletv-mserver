@@ -32,7 +32,7 @@ def mysig(sig,frame):
 
 orisig=signal.signal(signal.SIGTERM,mysig)
 
-PATH="/DataVolume/shares/Public/avs/"
+PATH="/DataVolume/.avs/"
 class trans:
 	def __init__(self,fname,segoff,smap=None,copy=0):
 		#self.cmd="""/opt/avs/bin/avconv --segment-length 4 --segment-offset %d -threads 4 -ss %d.0 -i "%s" -map 0:0,0:0 -map 0:1,0:1 -vf "crop=1280:720:0:0, scale=1280:720,copy" -aspect 1280:720 -y -f mpegts -async -1 -vcodec libx264 -vcodec copy -bsf:v h264_mp4toannexb -acodec libmp3lame -ab 256k -ar 48000 -ac 2 -""" % (segoff,segoff*4,fname)
