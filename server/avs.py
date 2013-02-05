@@ -192,11 +192,16 @@ class Handler:
 			fn=data[1:]
 			ret=list(info(fn))
 			srt=fn[:-3]+'shooter.srt'
+			ass=fn[:-3]+'shooter.ass'
 			try:
 				st=os.stat(srt)
 			except:
 				st=None
-			if st is None:
+			try:
+				sta=os.stat(ass)
+			except:
+				sta=None
+			if st is None and sta is None:
 				cmd="""/opt/avs/shooter.py "%s" 2>&1"""  % fn
 				os.system(cmd)
 			try:
@@ -205,6 +210,13 @@ class Handler:
 				st=None
 			if st:
 				ret.append('shooter.srt')
+			else:
+				try:
+					st=os.stat(ass)
+				except:
+					st=None
+				if st:
+					ret.append('shooter.ass')
 			ret=str(ret)
 		elif data[0]=='S':
 			fn=data[1:]
